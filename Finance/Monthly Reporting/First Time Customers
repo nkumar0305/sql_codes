@@ -1,0 +1,21 @@
+--First Time Customers
+
+select 
+count(distinct customerid ) as new_customers_transcations,
+from(
+select
+customerid,
+min(paymentrecieptid) as first_payment_receipt,
+min(date(transactiondate)) as first_transaction_date
+
+from`mydeal-bigquery.sql_server_rds_dbo.paymentreciept` 
+  where  
+        paymentreciepttype in (0,1,2)
+        and approved = True 
+        and amount > 0
+        and customermarketplace is null
+
+group by 1
+)
+where first_transaction_date >= date_add(date_trunc(current_date, month), INTERVAL -1 MONTH)
+ and first_transaction_date < date_trunc(current_date, month)
