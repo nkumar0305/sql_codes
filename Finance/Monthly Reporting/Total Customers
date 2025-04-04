@@ -1,0 +1,13 @@
+SELECT count(distinct CustomerID)
+
+FROM  `mydeal-bigquery.crm_data.biddeal` as bd 
+left join `mydeal-bigquery.sql_server_rds_dbo.recieptitems` as ri
+on(bd.biddealid = ri.biddealid)
+left join (select paymentrecieptid,customermarketplace from `mydeal-bigquery.sql_server_rds_dbo.paymentreciept` group by 1,2)as p
+on(ri.paymentrecieptid = p.paymentrecieptid)
+WHERE status in (3,4)
+      AND customermarketplace is null
+      AND totalamount > 0
+and date(acceptedtime) >= date_add(date_trunc(current_date, month), INTERVAL -1 MONTH)
+  AND date(acceptedtime) < date_trunc(current_date, month)
+   and ordertype <> 6;
