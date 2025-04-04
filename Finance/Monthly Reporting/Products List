@@ -1,0 +1,58 @@
+SELECT
+    FORMAT_TIMESTAMP('%b %Y', SalesMonth, 'UTC') AS SalesMonth,
+    CompanyId,
+    CompanyName,
+    ROUND(SUM(IF(TotalSalePriceExGST > 0, TotalSalePriceExGST, 0)), 2) AS GTV,
+    ROUND(SUM(IF(TotalSalePriceExGST > 0, IF(OrderType IN (9, 10, 11, 5, 4) OR TypeText = 'FreightProtection', 0, TotalSalePriceExGST), 0)), 2) AS ProductGTV,
+    ROUND(SUM(IF(TotalSalePriceExGST <> 0, TotalSalePriceExGST, 0)), 2) AS NTV,
+    ROUND(SUM(IF(TotalSalePriceExGST <> 0, IF(OrderType IN (9, 10, 11, 5, 4) OR TypeText = 'FreightProtection', 0, TotalSalePriceExGST), 0)), 2) AS ProductNTV,
+    ROUND(SUM(IF(TotalSalePriceExGST < 0 OR OrderType IN (9, 10, 11), 0, NetAmountExGST)), 2) AS NetAmountExGSTGTV,
+    ROUND(SUM(IF(OrderType IN (9, 10, 11, 5, 4) OR TypeText = 'FreightProtection' OR TotalSalePriceExGST < 0 OR OrderType IN (9, 10, 11), 0, NetAmountExGST)), 2) AS ProductNetAmountExGSTGTV,
+    ROUND(SUM(IF(OrderType IN (9, 10, 11), 0, NetAmountExGST)), 2) AS NetAmountExGSTNTV,
+    ROUND(SUM(IF(OrderType IN (9, 10, 11, 5, 4) OR TypeText = 'FreightProtection', 0, NetAmountExGST)), 2) AS ProductNetAmountExGSTNTV,
+    ROUND(SUM(IF(OrderType = 9, CommissionFee / 1.1, 0)), 2) AS TransactionFeeBasedCommissionExGST,
+    ROUND(SUM(IF(OrderType = 10, CommissionFee / 1.1, 0)), 2) AS SubscriptionFeeBasedCommissionExGST,
+    ROUND(SUM(IF(OrderType = 11, CommissionFee / 1.1, 0)), 2) AS RefundFeeBasedCommissionExGST
+FROM
+    (SELECT
+        TotalAmount,
+        CompanyPayPrice,
+        Qty,
+        c.CompanyId,
+        c.Description AS CompanyName,
+        bd.AcceptedTime,
+        OrderType,
+        (CustomerPrice - CompanyPayPrice) * Qty AS CommissionFee,
+        DATE_TRUNC(AcceptedTime, MONTH) AS SalesMonth,
+        TotalAmount / 1.1 AS TotalSalePriceExGST,
+        IF(c.RegisteredForGST = 1 OR OrderType IN (9, 10, 11), CompanyPayPrice * qty / 1.1, CompanyPayPrice * qty) AS NetAmountExGST,
+        CASE
+            WHEN bd.ordertype = 6 AND refundtype = 0 AND totalamount < 0 THEN 'CouponApplied'
+            WHEN bd.ordertype = 6 AND refundtype = 0 AND totalamount > 0 THEN 'CoupoonReversed'
+            WHEN bd.ordertype = 3 AND refundtype = 0 AND totalamount < 0 THEN 'CreditApplied'
+            WHEN bd.ordertype = 3 AND refundtype = 0 AND totalamount > 0 THEN 'CreditIssued'
+            WHEN bd.ordertype = 0 AND refundtype = 0 AND IsFreightProtection = 1 THEN 'FreightProtection'
+            WHEN bd.ordertype = 0 AND refundtype = 4 THEN 'RefundMoney'
+            WHEN bd.ordertype = 0 AND refundtype = 3 THEN 'RefundCredit'
+            WHEN bd.ordertype = 1 AND refundtype = 0 THEN 'AddOn'
+            WHEN bd.ordertype = 2 AND refundtype = 0 THEN 'Special / FreightQuote'
+            WHEN bd.ordertype = 12 AND refundtype = 0 AND totalamount < 0 THEN 'MyMoneyApplied'
+            WHEN bd.ordertype = 12 AND refundtype = 0 AND totalamount > 0 THEN 'MyMoneyReinstated'
+            WHEN bd.ordertype = 5 AND refundtype = 0 THEN 'SupplierDeduction'
+            WHEN bd.ordertype = 4 AND refundtype = 0 THEN 'SupplierPayment'
+            WHEN bd.ordertype = 9 AND refundtype = 0 THEN 'TransactionFee'
+            WHEN bd.ordertype = 10 AND refundtype = 0 THEN 'SubscriptionFee'
+            WHEN bd.ordertype = 11 AND refundtype = 0 THEN 'RefundFee'
+            WHEN bd.ordertype = 0 AND refundtype = 0 THEN 'Normal'
+            WHEN bd.ordertype = 0 AND refundtype = 1 THEN 'Normal'
+            WHEN bd.ordertype = 0 AND refundtype = 2 THEN 'Normal'
+            ELSE 'Missing'
+        END AS TypeText
+    FROM `mydeal-bigquery.crm_data.biddeal` bd
+    LEFT JOIN `mydeal-bigquery.crm_data.company` c ON bd.CompanyId = c.CompanyID
+    WHERE
+        DATE(AcceptedTime) >= DATE_ADD(DATE_TRUNC(CURRENT_DATE(), MONTH), INTERVAL -1 MONTH)
+        AND DATE(AcceptedTime) < DATE_TRUNC(CURRENT_DATE(), MONTH)
+        AND status IN (3, 4)) ab
+GROUP BY 2, 3, SalesMonth
+ORDER BY 2 ASC;
