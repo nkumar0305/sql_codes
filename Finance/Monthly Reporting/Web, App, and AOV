@@ -1,0 +1,16 @@
+select 
+case when clienttype = 0 then "web" 
+     when clienttype in (1,2,3) then "app"
+     end as platform,
+count(distinct paymentrecieptid) as total_transactions,
+round(sum(amount),2) as gross_sales,
+round(safe_divide(sum(amount),count(distinct paymentrecieptid)),2) as aov
+from`mydeal-bigquery.sql_server_rds_dbo.paymentreciept` 
+  where amount > 0 
+        and paymentreciepttype in (0,1,2)
+        and approved = True 
+        and customermarketplace is null
+        and date(transactiondate)>= date_add(date_trunc(current_date, month), INTERVAL -1 MONTH)
+         and date(transactiondate) < date_trunc(current_date, month)
+group by 1
+order by 2 desc;
