@@ -1,0 +1,11 @@
+SELECT 
+Level1,
+FORMAT_DATE('%b %Y', SaleDate) AS SalesMonth,
+sum(Revenue),
+sum(Margin)
+
+ FROM `mydeal-bigquery.dbt_data_studio.overall_performance` 
+ WHERE date(SaleDate) >= date_add(date_trunc(current_date, month), INTERVAL -1 MONTH) 
+ and date(SaleDate) < date_trunc(current_date, month)
+ group by all 
+ order by 3 desc
