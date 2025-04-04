@@ -1,0 +1,43 @@
+WITH cte_active_tm AS (
+  SELECT
+    'This Month' AS Period,
+    COUNT(DISTINCT customerid) AS active_users
+  FROM
+    `mydeal-bigquery.sql_server_rds_dbo.biddeal` AS bd
+  LEFT JOIN
+    `mydeal-bigquery.sql_server_rds_dbo.recieptitems` AS ri ON bd.biddealid = ri.biddealid
+  LEFT JOIN
+    (SELECT paymentrecieptid, customermarketplace FROM `mydeal-bigquery.sql_server_rds_dbo.paymentreciept` GROUP BY 1, 2) AS p ON ri.paymentrecieptid = p.paymentrecieptid
+  WHERE
+    status IN (3, 4)
+    AND totalamount > 0
+    AND customermarketplace IS NULL
+    AND DATE(acceptedtime) >= DATE_ADD(DATE_TRUNC(CURRENT_DATE(), MONTH), INTERVAL -12 MONTH)
+    AND DATE(acceptedtime) < DATE_TRUNC(CURRENT_DATE(), MONTH)
+),
+cte_active_lm AS (
+  SELECT
+    'Last Month' AS Period,
+    COUNT(DISTINCT customerid) AS active_users
+  FROM
+    `mydeal-bigquery.sql_server_rds_dbo.biddeal` AS bd
+  LEFT JOIN
+    `mydeal-bigquery.sql_server_rds_dbo.recieptitems` AS ri ON bd.biddealid = ri.biddealid
+  LEFT JOIN
+    (SELECT paymentrecieptid, customermarketplace FROM `mydeal-bigquery.sql_server_rds_dbo.paymentreciept` GROUP BY 1, 2) AS p ON ri.paymentrecieptid = p.paymentrecieptid
+  WHERE
+    status IN (3, 4)
+    AND totalamount > 0
+    AND customermarketplace IS NULL
+    AND DATE(acceptedtime) >= DATE_ADD(DATE_TRUNC(CURRENT_DATE(), MONTH), INTERVAL -13 MONTH)
+    AND DATE(acceptedtime) < DATE_ADD(DATE_TRUNC(CURRENT_DATE(), MONTH), INTERVAL -1 MONTH)
+)
+SELECT
+  *
+FROM
+  cte_active_tm
+UNION ALL
+SELECT
+  *
+FROM
+  cte_active_lm;
