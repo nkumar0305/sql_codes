@@ -1,0 +1,18 @@
+SELECT count(distinct customerid)
+--firstTransactionDate,
+--firstReciept
+FROM
+(
+    SELECT CustomerID,
+	        MIN(paymentrecieptid) AS firstReciept,
+          MIN(transactiondate) AS firstTransactionDate
+
+    FROM `mydeal-bigquery.crm_data.paymentreciept` 
+    WHERE Approved = 1
+          AND PaymentRecieptType IN (0,1,2)
+          AND customermarketplace is null
+    GROUP BY CustomerID
+) a
+WHERE date(firstTransactionDate) >= date_add(date_trunc(current_date, month), INTERVAL -1 MONTH)
+      AND date(firstTransactionDate) < date_trunc(current_date, month);
+
