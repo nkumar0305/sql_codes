@@ -1,0 +1,15 @@
+select 
+       count(distinct CustomerID) as churned_customers
+from `mydeal-bigquery.crm_data.biddeal`
+
+left join
+        (select 
+               distinct CustomerID as cid
+               from`mydeal-bigquery.crm_data.biddeal`
+               where date(AcceptedTime) >= date_add(date_trunc(current_date, month), INTERVAL -12 MONTH) 
+               and date(AcceptedTime) < date_trunc(current_date, month)
+               and (Status = 4 or Status = 3) and TotalAmount > 0) c 
+on CustomerID = c.cid
+where date(AcceptedTime) >= date_add(date_trunc(current_date, month), INTERVAL -13 MONTH)
+and date(AcceptedTime) < date_add(date_trunc(current_date, month), INTERVAL -1 MONTH) 
+and (Status = 4 or Status = 3) and TotalAmount > 0 and c.cid is null;
