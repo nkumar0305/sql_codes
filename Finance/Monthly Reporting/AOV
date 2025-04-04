@@ -1,0 +1,16 @@
+SELECT  
+count(distinct ri.paymentrecieptid) as transactions
+
+FROM `mydeal-bigquery.sql_server_rds_dbo.biddeal` as bd
+left join `mydeal-bigquery.sql_server_rds_dbo.recieptitems` as ri
+on(bd.biddealid = ri.biddealid)
+left join (select paymentrecieptid,customermarketplace from `mydeal-bigquery.sql_server_rds_dbo.paymentreciept` group by 1,2)as p
+on(ri.paymentrecieptid = p.paymentrecieptid)
+
+where   bd.status in(3,4)
+    and customermarketplace is null 
+    and totalamount > 0
+    and date(acceptedtime)>= date_add(date_trunc(current_date, month), INTERVAL -1 MONTH) 
+    and date(acceptedtime) < date_trunc(current_date, month)
+    and bd.companyid = 44456; --Private Label
+    -- and bd.companyid = 47684; --Third Party
