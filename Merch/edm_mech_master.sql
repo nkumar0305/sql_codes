@@ -71,6 +71,7 @@ mps.*,
 edm_product_id,
 edm_product_created_date,
 edm_product_name,
+edm_product_link,
 edm_sku,
 edm_product_price,
 edm_product_stock,
@@ -80,7 +81,7 @@ edm_active_status,edm_rrp,
 wmp_seller_name,wmp_seller_type
 from myd_product_consolidation as mps 
 left join 
-(select edm_product_id,edm_product_created_date,edm_product_name,edm_sku,edm_product_price,edm_product_stock,edm_cat_level1,edm_cat_level2,edm_cat_level3,edm_cat_level4,edm_active_status,edm_rrp,wmp_seller_name,wmp_seller_type,myd_dealid,myd_variantid from `mydeal-bigquery.dbt_data_studio.product_detail_edm` where last_updated_date = (select max(last_updated_date) from `mydeal-bigquery.dbt_data_studio.product_detail_edm`)) as edmps
+(select edm_product_id,edm_product_created_date,edm_product_link,edm_product_name,edm_sku,edm_product_price,edm_product_stock,edm_cat_level1,edm_cat_level2,edm_cat_level3,edm_cat_level4,edm_active_status,edm_rrp,wmp_seller_name,wmp_seller_type,myd_dealid,myd_variantid from `mydeal-bigquery.dbt_data_studio.product_detail_edm` where last_updated_date = (select max(last_updated_date) from `mydeal-bigquery.dbt_data_studio.product_detail_edm`)) as edmps
 on(mps.myd_productid = edmps.myd_dealid and ifnull(mps.myd_variantid,001000) = ifnull(edmps.myd_variantid,001000))
 ),
 base_sales as (
