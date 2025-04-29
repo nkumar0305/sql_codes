@@ -50,6 +50,8 @@ select
 myd_product_created_date,
 myd_productid,
 myd_product_name,
+myd_product_url,
+edm_product_link,
 myd_variantid,
 myd_product_sku,
 product_sell_price,
@@ -71,7 +73,13 @@ complaince_check_lb14.complaince_text as complaint_text_lb14,
 complaince_check_lb7.complaint_flag as complaint_flag_lb7,
 complaince_check_lb7.complaince_text as complaint_text_lb7,
 complaince_check_lb3.complaint_flag as complaint_flag_lb3,
-complaince_check_lb3.complaince_text as complaint_text_lb3
+complaince_check_lb3.complaince_text as complaint_text_lb3,
+case 
+     when lower(complaince_check_lb7.complaint_flag) = "non complaint" then "Non Complaint"
+     when lower(complaince_check_lb7.complaint_flag) is null and lower(complaince_check_lb3.complaint_flag) =  "non complaint" then "Non Complaint"
+     when lower(complaince_check_lb7.complaint_flag) = "complaint" and lower(complaince_check_lb3.complaint_flag) =  "non complaint" then "Non Complaint"
+     when lower(complaince_check_lb7.complaint_flag) is null and lower(complaince_check_lb3.complaint_flag) =  "complaint" then "Complaint"
+     else "Complaint" end as complaint_flag
 from(
 select 
 base.*,
@@ -87,6 +95,8 @@ select
 myd_product_created_date,
 myd_productid,
 myd_product_name,
+myd_product_url,
+edm_product_link,
 myd_variantid,
 myd_product_sku,
 product_sell_price,
@@ -100,7 +110,7 @@ last_stock_oos_date,
 date_sub(promotion_start_date,interval 14 day) as lookback_14days,
 date_sub(promotion_start_date,interval 7 day) as lookback_7days,
 date_sub(promotion_start_date,interval 3 day) as lookback_3days
-from `gcp-wow-rwds-ai-ed-mktplc-dev._3411302a4d4bf286248cff016de43d7b4d5bc402.anon790eec24_832a_4e48_b7a0_fdd119f56915` 
+from `gcp-wow-rwds-ai-ed-mktplc-dev._3411302a4d4bf286248cff016de43d7b4d5bc402.anona94cc851_037f_414e_8b47_d6dbb09711f1` 
 where is_promo_product = true
 ) as base
 left join sell_price as sp14
