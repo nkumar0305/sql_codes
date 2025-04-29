@@ -37,7 +37,7 @@ struct(
 
 create temp function compliance_flag(complaince_columns struct<field1 bool,field2 bool,field3 bool,field4 bool,field5 bool>) as (
 struct(
-  case when complaince_columns.field1 is not null or complaince_columns.field2 is not null or complaince_columns.field3 is not null and complaince_columns.field4 is not null and complaince_columns.field5 is not null then "Non Compliant"
+  case when complaince_columns.field1 is not null or complaince_columns.field2 is not null or complaince_columns.field3 is not null or complaince_columns.field4 is not null or complaince_columns.field5 is not null then "Non Compliant"
   else "Complaint" end as complaint_flag,
 regexp_replace(
   concat(ifnull(case when complaince_columns.field1 is not null then "[Price change check failed]" end,""),
